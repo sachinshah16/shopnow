@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{% url 'products:home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'products:shop_detail' product.shop.pk %}">{{ product.shop.name }}</a></li>
+            <li class="breadcrumb-item active">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        <!-- Image Gallery -->
+        <div class="col-lg-6">
+            <div class="product-gallery">
+                <div class="product-main-image" id="mainImage">
+                    {% if images %}
+                    <img src="{{ images.0.image.url }}" alt="{{ product.name }}" id="mainProductImg">
+                    {% else %}
+                    <div class="placeholder-img placeholder-lg"><i class="bi bi-image fs-1"></i></div>
+                    {% endif %}
+                </div>
+                {% if images.count > 1 %}
+                <div class="product-thumbnails mt-3">
+                    {% for img in images %}
+                    <div class="product-thumb {% if forloop.first %}active{% endif %}" onclick="changeImage('{{ img.image.url }}', this)">
+                        <img src="{{ img.image.url }}" alt="Thumbnail {{ forloop.counter }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-lg-6">
+            <div class="product-detail-info">
+                <span class="badge bg-light text-dark mb-2">{{ product.category.name }}</span>
+                <h3 class="fw-bold">{{ product.name }}</h3>
+                <p class="product-detail-price" id="productPrice">₹ {{ product.base_price|floatformat:0 }}</p>
+
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="badge bg-{{ product.shop.shop_type }}">{{ product.shop.name }}</span>
+                    <span class="text-muted small"><i class="bi bi-tags"></i> {{ product.get_product_type_display }}</span>
+                    {% if product.in_stock %}
+                    <span class="text-success small"><i class="bi bi-check-circle-fill"></i> In Stock</span>
+                    {% else %}
+                    <span class="text-danger small"><i class="bi bi-x-circle-fill"></i> Out of Stock</span>
+                    {% endif %}
+                </div>
+
+                {% if product.description %}
+                <p class="text-muted">{{ product.description }}</p>
+                {% endif %}
+
+                <!-- Variant Selector -->
+                <form method="POST" action="{% url 'orders:add_to_cart' %}" id="addToCartForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="variant_id" id="selectedVariantId" value="">
+
+                    <!-- Size Selector -->
+                    {% if sizes %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Size</label>
+                        <div class="variant-pills" id="sizePills">
+                            {% for size in sizes %}
+                            <button type="button" class="variant-pill" data-value="{{ size }}" onclick="selectSize(this)">{{ size }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Color Selector -->
+                    {% if colors %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Color</label>
+                        <div class="variant-pills" id="colorPills">
+                            {% for color in colors %}
+                            <button type="button" class="variant-pill color-pill" data-value="{{ color.color }}"
+                                    onclick="selectColor(this)" title="{{ color.color }}">
+                                <span class="color-dot" style="background: {{ color.color_code }}"></span>
+                                {{ color.color }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Stock Info -->
+                    <div class="mb-3" id="stockInfo" style="display:none;">
+                        <span class="text-muted small" id="stockText"></span>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Quantity</label>
+                        <div class="qty-selector">
+                            <button type="button" class="qty-btn" onclick="changeQty(-1)">-</button>
+                            <input type="number" name="quantity" value="1" min="1" class="qty-input" id="qtyInput">
+                            <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-shopnow btn-lg w-100" id="addToCartBtn">
+                        <i class="bi bi-bag-plus me-2"></i>Add to Cart
+                    </button>
+                </form>
+
+                <!-- Delivery Info -->
+                <div class="delivery-info mt-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-truck text-success"></i>
+                        <span class="small">Delivery within <strong>12 hours</strong></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-cash-coin text-warning"></i>
+                        <span class="small">Cash on Delivery available</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related_products %}
+    <div class="mt-5">
+        <h5 class="section-title">You May Also Like</h5>
+        <div class="row g-3">
+            {% for rp in related_products %}
+            <div class="col-6 col-md-3">
+                <div class="product-card">
+                    <a href="{% url 'products:product_detail' rp.slug %}" class="text-decoration-none">
+                        <div class="product-card-img">
+                            {% if rp.primary_image %}
+                            <img src="{{ rp.primary_image.image.url }}" alt="{{ rp.name }}">
+                            {% else %}
+                            <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </div>
+                        <div class="product-card-info">
+                            <h6 class="product-card-name">{{ rp.name }}</h6>
+                            <p class="product-card-price">₹ {{ rp.base_price|floatformat:0 }}</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const PRODUCT_ID = {{ product.pk }};
+    let selectedSize = null;
+    let selectedColor = null;
+
+    function selectSize(el) {
+        document.querySelectorAll('#sizePills .variant-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        selectedSize = el.dataset.value;
+        checkVariant();
+    }
+
+    function selectColor(el) {
+        document.querySelectorAll('#colorPills .variant-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        selectedColor = el.dataset.value;
+        checkVariant();
+    }
+
+    function checkVariant() {
+        if (!selectedSize || !selectedColor) return;
+        fetch(`/home/api/variant/?product_id=${PRODUCT_ID}&size=${selectedSize}&color=${selectedColor}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.found) {
+                    document.getElementById('selectedVariantId').value = data.variant_id;
+                    document.getElementById('productPrice').textContent = '₹ ' + parseInt(data.price).toLocaleString('en-IN');
+                    document.getElementById('stockInfo').style.display = 'block';
+                    document.getElementById('stockText').textContent = data.in_stock
+                        ? `${data.stock} items in stock`
+                        : 'Out of stock';
+                    document.getElementById('stockText').className = data.in_stock ? 'text-success small' : 'text-danger small';
+                    document.getElementById('addToCartBtn').disabled = !data.in_stock;
+                } else {
+                    document.getElementById('selectedVariantId').value = '';
+                    document.getElementById('stockInfo').style.display = 'block';
+                    document.getElementById('stockText').textContent = 'This combination is not available';
+                    document.getElementById('stockText').className = 'text-danger small';
+                    document.getElementById('addToCartBtn').disabled = true;
+                }
+            });
+    }
+
+    function changeQty(delta) {
+        const input = document.getElementById('qtyInput');
+        let val = parseInt(input.value) + delta;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    function changeImage(url, thumb) {
+        document.getElementById('mainProductImg').src = url;
+        document.querySelectorAll('.product-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'vendors/vendor_base.html' %}
+
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold mb-0">Orders</h5>
+        <a href="{% url 'vendors:dashboard' %}" class="btn btn-outline-shopnow btn-sm">Back to Dashboard</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td class="fw-semibold">{{ order.order_number }}</td>
+                    <td>{{ order.user.get_full_name|default:order.user.username }}</td>
+                    <td>₹ {{ order.total_amount|floatformat:0 }}</td>
+                    <td><span class="badge bg-{{ order.status_display_class }}">{{ order.get_status_display }}</span></td>
+                    <td class="text-muted small">{{ order.created_at|date:"d M Y, h:i A" }}</td>
+                    <td><a href="{% url 'vendors:order_detail' order.pk %}" class="btn btn-outline-shopnow btn-sm">Manage</a></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">No orders yet</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

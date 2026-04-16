@@ -1,0 +1,36 @@
+{% extends 'vendors/vendor_base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }} Shop{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{% url 'vendors:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">{{ action }} Shop</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="checkout-card">
+                <h5 class="fw-bold mb-4"><i class="bi bi-shop me-2"></i>{{ action }} Shop</h5>
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ field.label }}</label>
+                        {% render_field field class="form-control" %}
+                        {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-shopnow w-100">{{ action }} Shop</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

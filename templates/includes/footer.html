@@ -1,0 +1,45 @@
+<footer class="shopnow-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <h5 class="footer-brand"><i class="bi bi-bag-fill me-2"></i>ShopNow</h5>
+                <p class="text-muted small">Hyperlocal fashion marketplace. Browse local shops, discover trending fashion, and get delivery within 12 hours.</p>
+                <p class="text-muted small mb-0">Powered by <strong>VindhyaTech.in</strong></p>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <h6 class="footer-heading">Quick Links</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><a href="{% url 'products:home' %}">Home</a></li>
+                    <li><a href="{% url 'products:shop_list' %}">Shops</a></li>
+                    <li><a href="{% url 'products:product_list' %}">Products</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <h6 class="footer-heading">Account</h6>
+                <ul class="list-unstyled footer-links">
+                    {% if user.is_authenticated %}
+                    <li><a href="{% url 'users:profile' %}">My Profile</a></li>
+                    <li><a href="{% url 'orders:order_list' %}">My Orders</a></li>
+                    <li><a href="{% url 'orders:cart' %}">Cart</a></li>
+                    {% else %}
+                    <li><a href="{% url 'users:login' %}">Login</a></li>
+                    <li><a href="{% url 'users:register_customer' %}">Register</a></li>
+                    <li><a href="{% url 'users:register_vendor' %}">Become a Vendor</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <h6 class="footer-heading">Contact</h6>
+                <ul class="list-unstyled footer-links">
+                    <li><i class="bi bi-envelope me-2"></i>support@shopnow.in</li>
+                    <li><i class="bi bi-phone me-2"></i>+91 98765 43210</li>
+                    <li><i class="bi bi-geo-alt me-2"></i>Bangalore, India</li>
+                </ul>
+            </div>
+        </div>
+        <hr class="mt-4 mb-3 border-secondary">
+        <div class="text-center text-muted small">
+            &copy; 2026 ShopNow. All rights reserved. | Powered by VindhyaTech.in
+        </div>
+    </div>
+</footer>

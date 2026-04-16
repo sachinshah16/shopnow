@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}{{ shop.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Shop Header -->
+    <div class="shop-detail-header mb-4">
+        {% if shop.banner %}
+        <div class="shop-banner" style="background-image: url('{{ shop.banner.url }}')"></div>
+        {% else %}
+        <div class="shop-banner shop-banner-default">
+            <i class="bi bi-shop fs-1 text-white"></i>
+        </div>
+        {% endif %}
+        <div class="shop-detail-info">
+            {% if shop.logo %}
+            <img src="{{ shop.logo.url }}" alt="{{ shop.name }}" class="shop-logo">
+            {% endif %}
+            <div>
+                <h4 class="fw-bold mb-1">{{ shop.name }}</h4>
+                <p class="text-muted mb-1"><i class="bi bi-geo-alt-fill text-danger"></i> {{ shop.address }}, {{ shop.city }}</p>
+                <span class="shop-rating fs-6">{{ shop.rating|star_rating }}</span>
+                <span class="badge bg-{{ shop.shop_type }} ms-2">{{ shop.get_shop_type_display }}</span>
+            </div>
+        </div>
+        {% if shop.description %}
+        <p class="text-muted mt-2 small">{{ shop.description }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Category filters -->
+    {% if categories %}
+    <div class="filter-pills mb-3">
+        <a href="{% url 'products:shop_detail' shop.pk %}" class="filter-pill {% if not category_slug %}active{% endif %}">All</a>
+        {% for cat in categories %}
+        <a href="?category={{ cat.slug }}" class="filter-pill {% if category_slug == cat.slug %}active{% endif %}">{{ cat.name }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Products -->
+    <h6 class="section-title">Products ({{ products.paginator.count }})</h6>
+    <div class="row g-3">
+        {% for product in products %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="product-card">
+                <a href="{% url 'products:product_detail' product.slug %}" class="text-decoration-none">
+                    <div class="product-card-img">
+                        {% if product.primary_image %}
+                        <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+                        {% else %}
+                        <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="product-card-info">
+                        <h6 class="product-card-name">{{ product.name }}</h6>
+                        <p class="product-card-price">₹ {{ product.base_price|floatformat:0 }}</p>
+                    </div>
+                </a>
+                <form class="quick-add-form" data-url="{% url 'orders:quick_add_to_cart' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.pk }}">
+                    <button type="submit" class="btn-add-to-cart">Add to Cart</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted">No products in this shop yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if products.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if products.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}">&laquo;</a></li>
+            {% endif %}
+            {% for num in products.paginator.page_range %}
+            <li class="page-item {% if products.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if products.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

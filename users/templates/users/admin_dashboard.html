@@ -1,0 +1,169 @@
+{% extends 'users/admin_base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-shield-check text-danger me-2"></i>Admin Dashboard</h4>
+            <p class="text-muted mb-0">Welcome, {{ user.get_full_name|default:user.username }} &mdash; Platform Overview</p>
+        </div>
+        <a href="{% url 'users:mode_select' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left-circle me-1"></i>Back to Mode Select
+        </a>
+    </div>
+
+    <!-- Platform Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fff0f1;"><i class="bi bi-people text-danger"></i></div>
+                <div class="stat-value">{{ total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e8f5e9;"><i class="bi bi-shop text-success"></i></div>
+                <div class="stat-value">{{ total_vendors }}</div>
+                <div class="stat-label">Vendors</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e3f2fd;"><i class="bi bi-box-seam text-primary"></i></div>
+                <div class="stat-value">{{ total_products }}</div>
+                <div class="stat-label">Products</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fff8e1;"><i class="bi bi-receipt text-warning"></i></div>
+                <div class="stat-value">{{ total_orders }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Stats -->
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fce4ec;"><i class="bi bi-clock-history text-danger"></i></div>
+                <div class="stat-value">{{ pending_orders }}</div>
+                <div class="stat-label">Pending Orders</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e8eaf6;"><i class="bi bi-check-circle text-indigo"></i></div>
+                <div class="stat-value">{{ delivered_orders }}</div>
+                <div class="stat-label">Delivered</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e0f7fa;"><i class="bi bi-bag-check text-info"></i></div>
+                <div class="stat-value">{{ total_shops }}</div>
+                <div class="stat-label">Total Shops</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f3e5f5;"><i class="bi bi-currency-rupee text-purple"></i></div>
+                <div class="stat-value">₹{{ total_revenue|floatformat:0 }}</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders (Platform-Wide) -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Recent Orders (Platform-Wide)</h5>
+        <a href="{% url 'users:admin_orders' %}" class="btn btn-outline-shopnow btn-sm">View All</a>
+    </div>
+    {% if recent_orders %}
+    <div class="table-responsive mb-5">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td class="fw-semibold">{{ order.order_number }}</td>
+                    <td>{{ order.user.get_full_name|default:order.user.username }}</td>
+                    <td>₹ {{ order.total_amount|floatformat:0 }}</td>
+                    <td><span class="badge bg-{{ order.status_display_class }}">{{ order.get_status_display }}</span></td>
+                    <td class="text-muted small">{{ order.created_at|date:"d M, h:i A" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary mb-5">No orders placed yet.</div>
+    {% endif %}
+
+    <!-- Recent Users -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Recent Users</h5>
+        <a href="{% url 'users:admin_users' %}" class="btn btn-outline-shopnow btn-sm">View All</a>
+    </div>
+    <div class="table-responsive mb-5">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in recent_users %}
+                <tr>
+                    <td>{{ u.get_full_name|default:"—" }}</td>
+                    <td class="text-muted">{{ u.username }}</td>
+                    <td><span class="badge bg-secondary">{{ u.get_role_display }}</span></td>
+                    <td class="text-muted small">{{ u.date_joined|date:"d M Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Quick Admin Actions -->
+    <h5 class="fw-bold mb-3">Quick Actions</h5>
+    <div class="row g-3">
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'users:admin_orders' %}" class="btn btn-outline-shopnow w-100">
+                <i class="bi bi-receipt me-2"></i>All Orders
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'users:admin_users' %}" class="btn btn-outline-shopnow w-100">
+                <i class="bi bi-people me-2"></i>Manage Users
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'users:admin_vendors' %}" class="btn btn-outline-shopnow w-100">
+                <i class="bi bi-shop me-2"></i>Manage Vendors
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'products:product_list' %}" class="btn btn-outline-shopnow w-100">
+                <i class="bi bi-box-seam me-2"></i>Browse Products
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}Select Mode{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5 text-center">
+    <h3 class="fw-bold mb-4">Choose Your Mode</h3>
+    <p class="text-muted mb-5">Select how you want to continue today.</p>
+    
+    <div class="row justify-content-center g-4">
+        <!-- User Mode -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 checkout-card text-center p-4">
+                <i class="bi bi-cart mb-3 text-shopnow" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">User Mode</h5>
+                <p class="text-muted small mb-4">Browse and shop as a normal customer.</p>
+                <div class="mt-auto">
+                    <a href="{% url 'products:home' %}" class="btn btn-outline-shopnow w-100">Enter User Mode</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 checkout-card text-center p-4">
+                <i class="bi bi-shop mb-3 text-shopnow" style="font-size: 3rem;"></i>
+                {% if user.role == 'admin' or user.is_superuser %}
+                    <h5 class="fw-bold">Admin Dashboard</h5>
+                    <p class="text-muted small mb-4">Manage platform, orders and users.</p>
+                    <div class="mt-auto">
+                        <a href="{% url 'users:admin_dashboard' %}" class="btn btn-shopnow w-100">Enter Dashboard</a>
+                    </div>
+                {% elif user.role == 'delivery' %}
+                    <h5 class="fw-bold">Delivery Dashboard</h5>
+                    <p class="text-muted small mb-4">Manage your delivery assignments.</p>
+                    <div class="mt-auto">
+                        <!-- Placeholder for Delivery Dashboard -->
+                        <a href="#" class="btn btn-shopnow w-100 disabled">Coming Soon</a>
+                    </div>
+                {% else %}
+                    <h5 class="fw-bold">Vendor Dashboard</h5>
+                    <p class="text-muted small mb-4">Manage your shops, products, and orders.</p>
+                    <div class="mt-auto">
+                        <a href="{% url 'vendors:dashboard' %}" class="btn btn-shopnow w-100">Enter Dashboard</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Sell Hub (Visible for Vendor/Admin) -->
+        {% if user.role in 'vendor,admin' %}
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 checkout-card text-center p-4" id="quickSellCard">
+                <i class="bi bi-upc-scan mb-3 text-shopnow" style="font-size: 3rem;"></i>
+                <h5 class="fw-bold">Quick Sell Gateway</h5>
+                <p class="text-muted small mb-3">Scan or enter SKU to instantly record physical sales.</p>
+                
+                <!-- Search Form -->
+                <form id="quickSellForm" class="mt-auto text-start">
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" id="qsProductCode" placeholder="Enter Product Code" required autocomplete="off">
+                        <button class="btn btn-outline-shopnow" type="submit" id="qsBtn"><i class="bi bi-search"></i></button>
+                    </div>
+                    <div id="qsFeedback" class="small text-danger text-center"></div>
+                </form>
+
+                <!-- Hidden Dropdown Panel for Details -->
+                <div id="qsDropdown" class="collapse mt-3 text-start border-top pt-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div id="qsImg" class="me-3 bg-light rounded" style="width: 50px; height: 50px; background-size: cover; background-position: center;"></div>
+                        <div>
+                            <h6 class="fw-bold mb-0" id="qsName">Product Name</h6>
+                            <small class="text-muted" id="qsVariant">Size / Color</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3 text-sm">
+                        <span class="fw-semibold text-shopnow">₹ <span id="qsPrice">0</span></span>
+                        <span class="badge bg-success" id="qsStock">In Stock: 0</span>
+                    </div>
+                    <input type="hidden" id="qsVariantId">
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-secondary w-50" id="qsCancelBtn">Cancel</button>
+                        <button type="button" class="btn btn-sm btn-danger w-50" id="qsConfirmBtn">Sell Item</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const qsForm = document.getElementById('quickSellForm');
+    const qsBtn = document.getElementById('qsBtn');
+    const qsCode = document.getElementById('qsProductCode');
+    const qsFeedback = document.getElementById('qsFeedback');
+    const qsDropdown = document.getElementById('qsDropdown');
+    const qsConfirmBtn = document.getElementById('qsConfirmBtn');
+    const qsCancelBtn = document.getElementById('qsCancelBtn');
+    const bsCollapse = new bootstrap.Collapse(qsDropdown, { toggle: false });
+
+    if (!qsForm) return; // Not a vendor
+
+    // Function to search item
+    qsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const code = qsCode.value.trim();
+        if (!code) return;
+
+        qsBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        qsBtn.disabled = true;
+        qsFeedback.textContent = '';
+        bsCollapse.hide();
+
+        fetch(`/vendor/api/quick-sell/?product_code=${encodeURIComponent(code)}`)
+            .then(r => r.json())
+            .then(data => {
+                qsBtn.innerHTML = '<i class="bi bi-search"></i>';
+                qsBtn.disabled = false;
+
+                if (data.status === 'success') {
+                    // Populate UI
+                    document.getElementById('qsName').textContent = data.product.name;
+                    document.getElementById('qsVariant').textContent = data.product.variant_info;
+                    document.getElementById('qsPrice').textContent = data.product.price.toFixed(0);
+                    document.getElementById('qsStock').textContent = `In Stock: ${data.product.stock}`;
+                    document.getElementById('qsVariantId').value = data.product.id;
+                    
+                    const imgDiv = document.getElementById('qsImg');
+                    if (data.product.image_url) {
+                        imgDiv.style.backgroundImage = `url('${data.product.image_url}')`;
+                        imgDiv.innerHTML = '';
+                    } else {
+                        imgDiv.style.backgroundImage = 'none';
+                        imgDiv.innerHTML = '<div class="h-100 d-flex align-items-center justify-content-center text-muted"><i class="bi bi-image"></i></div>';
+                    }
+
+                    // Show dropdown
+                    bsCollapse.show();
+                    qsConfirmBtn.focus();
+                } else {
+                    qsFeedback.textContent = data.message;
+                }
+            })
+            .catch(err => {
+                qsBtn.innerHTML = '<i class="bi bi-search"></i>';
+                qsBtn.disabled = false;
+                qsFeedback.textContent = 'Server error. Please try again.';
+            });
+    });
+
+    // Function to confirm sale
+    qsConfirmBtn.addEventListener('click', function() {
+        const variantId = document.getElementById('qsVariantId').value;
+        const confirmBtnOriginal = qsConfirmBtn.innerHTML;
+        qsConfirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        qsConfirmBtn.disabled = true;
+
+        const formData = new FormData();
+        formData.append('variant_id', variantId);
+        
+        // Add CSRF
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        fetch('/vendor/api/quick-sell/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            qsConfirmBtn.innerHTML = confirmBtnOriginal;
+            qsConfirmBtn.disabled = false;
+
+            if (data.status === 'success') {
+                bsCollapse.hide();
+                qsCode.value = '';
+                qsCode.focus();
+                
+                // Show success gently without alert
+                qsFeedback.className = 'small text-success text-center mt-2';
+                qsFeedback.textContent = data.message;
+                setTimeout(() => { qsFeedback.textContent = ''; qsFeedback.className = 'small text-danger text-center'; }, 3000);
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(err => {
+            qsConfirmBtn.innerHTML = confirmBtnOriginal;
+            qsConfirmBtn.disabled = false;
+            alert('Failed to process sale.');
+        });
+    });
+
+    qsCancelBtn.addEventListener('click', function() {
+        bsCollapse.hide();
+        qsCode.value = '';
+        qsFeedback.textContent = '';
+    });
+});
+</script>
+{% endblock %}

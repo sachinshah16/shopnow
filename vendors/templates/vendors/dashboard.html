@@ -1,0 +1,128 @@
+{% extends 'vendors/vendor_base.html' %}
+
+{% block title %}Vendor Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Vendor Dashboard</h4>
+            <p class="text-muted mb-0">Welcome, {{ vendor.business_name }}</p>
+        </div>
+        {% if not shops %}
+        <a href="{% url 'vendors:shop_create' %}" class="btn btn-shopnow"><i class="bi bi-plus-circle me-2"></i>Create Shop</a>
+        {% endif %}
+    </div>
+
+
+
+    <!-- Recent Orders (Moved to TOP) -->
+    <h5 class="fw-bold mb-3">Recent Orders</h5>
+    {% if recent_orders %}
+    <div class="table-responsive mb-5">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in recent_orders %}
+                <tr>
+                    <td class="fw-semibold">{{ order.order_number }}</td>
+                    <td>{{ order.user.get_full_name|default:order.user.username }}</td>
+                    <td>₹ {{ order.total_amount|floatformat:0 }}</td>
+                    <td><span class="badge bg-{{ order.status_display_class }}">{{ order.get_status_display }}</span></td>
+                    <td class="text-muted small">{{ order.created_at|date:"d M, h:i A" }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'vendors:order_detail' order.pk %}" class="btn btn-outline-shopnow btn-sm">Manage</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary mb-5">No recent orders yet.</div>
+    {% endif %}
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary-light"><i class="bi bi-shop text-primary"></i></div>
+                <div class="stat-value">{{ shops.count }}</div>
+                <div class="stat-label">Shops</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success-light"><i class="bi bi-box-seam text-success"></i></div>
+                <div class="stat-value">{{ total_products }}</div>
+                <div class="stat-label">Products</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning-light"><i class="bi bi-clock text-warning"></i></div>
+                <div class="stat-value">{{ pending_orders }}</div>
+                <div class="stat-label">Pending Orders</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-info-light"><i class="bi bi-receipt text-info"></i></div>
+                <div class="stat-value">{{ recent_orders|length }}</div>
+                <div class="stat-label">Recent Orders</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h5 class="fw-bold mb-3">Management</h5>
+    <div class="row g-3 mb-5">
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'vendors:shop_create' %}" class="btn btn-outline-shopnow w-100"><i class="bi bi-plus-circle me-2"></i>Add Shop</a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'vendors:product_add' %}" class="btn btn-outline-shopnow w-100"><i class="bi bi-plus-square me-2"></i>Add Product</a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'vendors:products' %}" class="btn btn-outline-shopnow w-100"><i class="bi bi-grid me-2"></i>Manage Products</a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a href="{% url 'vendors:orders' %}" class="btn btn-outline-shopnow w-100"><i class="bi bi-receipt me-2"></i>View Orders</a>
+        </div>
+    </div>
+
+    <!-- Shops -->
+    {% if shops %}
+    <h5 class="fw-bold mb-3">Your Shops Activity</h5>
+    <div class="row g-3 mb-4">
+        {% for shop in shops %}
+        <div class="col-md-6">
+            <div class="checkout-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="fw-bold">{{ shop.name }}</h6>
+                        <p class="text-muted small mb-1"><i class="bi bi-geo-alt me-1"></i>{{ shop.city }}</p>
+                        <span class="badge bg-{{ shop.shop_type }}">{{ shop.get_shop_type_display }}</span>
+                        <span class="badge bg-{% if shop.is_active %}success{% else %}danger{% endif %} ms-1">{% if shop.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    </div>
+                    <a href="{% url 'vendors:shop_edit' shop.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
+                </div>
+                <div class="mt-2 text-muted small">{{ shop.product_count }} products list</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

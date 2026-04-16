@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="filter-sidebar">
+                <h6 class="fw-bold mb-3"><i class="bi bi-funnel me-2"></i>Filters</h6>
+                <form method="GET" id="filterForm">
+                    <!-- Search -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Search</label>
+                        <input type="text" name="q" class="form-control form-control-sm" placeholder="Search products..." value="{{ search_query }}">
+                    </div>
+
+                    <!-- Category -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Category</label>
+                        <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.slug }}" {% if category_slug == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Product Type -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Type</label>
+                        <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">All Types</option>
+                            <option value="casual" {% if product_type == 'casual' %}selected{% endif %}>Casual</option>
+                            <option value="formal" {% if product_type == 'formal' %}selected{% endif %}>Formal</option>
+                            <option value="ethnic" {% if product_type == 'ethnic' %}selected{% endif %}>Ethnic</option>
+                            <option value="sports" {% if product_type == 'sports' %}selected{% endif %}>Sports</option>
+                            <option value="party" {% if product_type == 'party' %}selected{% endif %}>Party Wear</option>
+                        </select>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Price Range</label>
+                        <div class="d-flex gap-2">
+                            <input type="number" name="price_min" class="form-control form-control-sm" placeholder="Min" value="{{ price_min }}">
+                            <input type="number" name="price_max" class="form-control form-control-sm" placeholder="Max" value="{{ price_max }}">
+                        </div>
+                    </div>
+
+                    <!-- Sort -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Sort By</label>
+                        <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest</option>
+                            <option value="base_price" {% if sort_by == 'base_price' %}selected{% endif %}>Price: Low to High</option>
+                            <option value="-base_price" {% if sort_by == '-base_price' %}selected{% endif %}>Price: High to Low</option>
+                            <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name: A-Z</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-shopnow btn-sm w-100">Apply Filters</button>
+                    <a href="{% url 'products:product_list' %}" class="btn btn-outline-secondary btn-sm w-100 mt-2">Clear All</a>
+                </form>
+            </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">
+                    {% if search_query %}Results for "{{ search_query }}"{% else %}All Products{% endif %}
+                    <span class="text-muted fs-6">({{ products.paginator.count }})</span>
+                </h5>
+            </div>
+
+            <div class="row g-3">
+                {% for product in products %}
+                <div class="col-6 col-md-4">
+                    <div class="product-card">
+                        <a href="{% url 'products:product_detail' product.slug %}" class="text-decoration-none">
+                            <div class="product-card-img">
+                                {% if product.primary_image %}
+                                <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+                                {% else %}
+                                <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                                {% endif %}
+                            </div>
+                            <div class="product-card-info">
+                                <h6 class="product-card-name">{{ product.name }}</h6>
+                                <p class="product-card-price">₹ {{ product.base_price|floatformat:0 }}</p>
+                            </div>
+                        </a>
+                        <form class="quick-add-form" data-url="{% url 'orders:quick_add_to_cart' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ product.pk }}">
+                            <button type="submit" class="btn-add-to-cart">Add to Cart</button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-bag-x fs-1 text-muted"></i>
+                    <p class="text-muted mt-2">No products found.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if products.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}&q={{ search_query }}&category={{ category_slug }}&sort={{ sort_by }}">&laquo;</a></li>
+                    {% endif %}
+                    {% for num in products.paginator.page_range %}
+                    <li class="page-item {% if products.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}&q={{ search_query }}&category={{ category_slug }}&sort={{ sort_by }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if products.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}&q={{ search_query }}&category={{ category_slug }}&sort={{ sort_by }}">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}All Shops{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">All Shops</h5>
+        <div class="d-flex gap-2">
+            <a href="?type=budget" class="filter-pill {% if shop_type == 'budget' %}active{% endif %}">Budget</a>
+            <a href="?type=premium" class="filter-pill {% if shop_type == 'premium' %}active{% endif %}">Premium</a>
+            <a href="{% url 'products:shop_list' %}" class="filter-pill {% if not shop_type %}active{% endif %}">All</a>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <form method="GET" class="mb-4">
+        {% if shop_type %}<input type="hidden" name="type" value="{{ shop_type }}">{% endif %}
+        <div class="input-group search-input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" name="q" class="form-control search-input" placeholder="Search shops..." value="{{ search_query }}">
+        </div>
+    </form>
+
+    <div class="row g-3">
+        {% for shop in shops %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'products:shop_detail' shop.pk %}" class="text-decoration-none">
+                <div class="shop-card">
+                    <div class="shop-card-images">
+                        {% with products=shop.products.all|slice:":3" %}
+                        {% for product in products %}
+                        <div class="shop-card-img">
+                            {% if product.primary_image %}
+                            <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+                            {% else %}
+                            <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="shop-card-img">
+                            {% if shop.banner %}
+                            <img src="{{ shop.banner.url }}" alt="{{ shop.name }}">
+                            {% else %}
+                            <div class="placeholder-img"><i class="bi bi-shop"></i></div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="shop-card-info">
+                        <h6 class="shop-card-name">{{ shop.name }}</h6>
+                        <div class="shop-card-meta">
+                            <span class="shop-distance"><i class="bi bi-geo-alt-fill"></i> {{ shop.city }}</span>
+                            <span class="shop-rating">{{ shop.rating|star_rating }}</span>
+                        </div>
+                        <span class="badge bg-{{ shop.shop_type }}">{{ shop.get_shop_type_display }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-shop fs-1 text-muted"></i>
+            <p class="text-muted mt-2">No shops found.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if shops.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if shops.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ shops.previous_page_number }}{% if shop_type %}&type={{ shop_type }}{% endif %}">&laquo;</a></li>
+            {% endif %}
+            {% for num in shops.paginator.page_range %}
+            <li class="page-item {% if shops.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if shop_type %}&type={{ shop_type }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if shops.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ shops.next_page_number }}{% if shop_type %}&type={{ shop_type }}{% endif %}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

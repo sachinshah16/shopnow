@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <h5 class="fw-bold mb-4"><i class="bi bi-credit-card me-2"></i>Checkout</h5>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="checkout-card">
+                <h6 class="fw-bold mb-3">Delivery Address</h6>
+                <form method="POST" id="checkoutForm">
+                    {% csrf_token %}
+
+                    <!-- Pincode Row (first — triggers auto-fill) -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Pincode</label>
+                            <div class="position-relative">
+                                <input type="text" name="delivery_pincode" id="id_pincode" class="form-control"
+                                       placeholder="Enter 6-digit pincode" value="{{ user.pincode }}"
+                                       maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required>
+                                <div id="pincodeSpinner" class="position-absolute top-50 end-0 translate-middle-y me-3 d-none">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                                <div id="pincodeStatus" class="form-text mt-1"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Area / Locality</label>
+                            <select name="delivery_area" id="id_area" class="form-select" disabled>
+                                <option value="">Enter pincode first</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- City, State, District (auto-filled) -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">City / District</label>
+                            <input type="text" name="delivery_city" id="id_city" class="form-control"
+                                   placeholder="City" value="{{ user.city }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">State</label>
+                            <input type="text" name="delivery_state" id="id_state" class="form-control"
+                                   placeholder="State" value="{{ user.state }}" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold">Country</label>
+                            <input type="text" name="delivery_country" id="id_country" class="form-control"
+                                   value="India" readonly>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Full Address</label>
+                        <textarea name="delivery_address" id="id_address" class="form-control" rows="3"
+                                  placeholder="House no., street, area, landmark..." required>{{ user.address }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" placeholder="+91 98765 43210" value="{{ user.phone }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Order Notes (optional)</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Any special instructions..."></textarea>
+                    </div>
+
+                    <div class="payment-method mt-4">
+                        <h6 class="fw-bold mb-3">Payment Method</h6>
+                        <div class="form-check p-3 bg-light rounded">
+                            <input class="form-check-input" type="radio" name="payment" checked>
+                            <label class="form-check-label">
+                                <i class="bi bi-cash-coin text-success me-2"></i>Cash on Delivery (COD)
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-shopnow btn-lg w-100 mt-4">
+                        <i class="bi bi-check-circle me-2"></i>Place Order
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="cart-summary">
+                <h6 class="fw-bold mb-3">Order Summary</h6>
+                {% for item in items %}
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <p class="mb-0 small fw-semibold">{{ item.variant.product.name }}</p>
+                        <p class="text-muted small mb-0">{{ item.variant.size }} / {{ item.variant.color }} × {{ item.quantity }}</p>
+                    </div>
+                    <span class="small fw-semibold">₹ {{ item.subtotal|floatformat:0 }}</span>
+                </div>
+                {% endfor %}
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Subtotal</span>
+                    <span>₹ {{ cart.total_amount|floatformat:0 }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Delivery</span>
+                    <span class="text-success">FREE</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <strong>Total</strong>
+                    <strong class="text-shopnow fs-5">₹ {{ cart.total_amount|floatformat:0 }}</strong>
+                </div>
+                <div class="mt-3 text-center">
+                    <small class="text-success"><i class="bi bi-truck me-1"></i>Delivery within 12 hours</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const pincodeInput = document.getElementById('id_pincode');
+    const cityInput = document.getElementById('id_city');
+    const stateInput = document.getElementById('id_state');
+    const countryInput = document.getElementById('id_country');
+    const areaSelect = document.getElementById('id_area');
+    const spinner = document.getElementById('pincodeSpinner');
+    const statusDiv = document.getElementById('pincodeStatus');
+    let debounceTimer = null;
+
+    function showStatus(message, type) {
+        statusDiv.innerHTML = `<span class="text-${type}"><i class="bi bi-${type === 'success' ? 'check-circle-fill' : type === 'danger' ? 'x-circle-fill' : 'info-circle-fill'} me-1"></i>${message}</span>`;
+    }
+
+    function clearStatus() {
+        statusDiv.innerHTML = '';
+    }
+
+    function setLoading(loading) {
+        if (loading) {
+            spinner.classList.remove('d-none');
+            pincodeInput.classList.remove('is-valid', 'is-invalid');
+        } else {
+            spinner.classList.add('d-none');
+        }
+    }
+
+    function lookupPincode(pincode) {
+        if (pincode.length !== 6) {
+            clearStatus();
+            return;
+        }
+
+        setLoading(true);
+
+        fetch(`{% url 'orders:pincode_lookup' %}?pincode=${pincode}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            setLoading(false);
+
+            if (data.status === 'success') {
+                // Auto-fill city, state, country
+                cityInput.value = data.city || '';
+                stateInput.value = data.state || '';
+                countryInput.value = data.country || 'India';
+
+                // Populate area/locality dropdown
+                areaSelect.innerHTML = '<option value="">-- Select Area --</option>';
+                if (data.areas && data.areas.length > 0) {
+                    data.areas.forEach(area => {
+                        const opt = document.createElement('option');
+                        opt.value = area;
+                        opt.textContent = area;
+                        areaSelect.appendChild(opt);
+                    });
+                    areaSelect.disabled = false;
+                }
+
+                pincodeInput.classList.add('is-valid');
+                showStatus(`${data.city}, ${data.state}`, 'success');
+
+                // Animate the auto-filled fields
+                [cityInput, stateInput, countryInput].forEach(el => {
+                    el.style.transition = 'background-color 0.5s ease';
+                    el.style.backgroundColor = '#e8f5e9';
+                    setTimeout(() => { el.style.backgroundColor = ''; }, 1500);
+                });
+
+            } else {
+                pincodeInput.classList.add('is-invalid');
+                showStatus(data.error || 'Invalid pincode', 'danger');
+                areaSelect.innerHTML = '<option value="">Enter pincode first</option>';
+                areaSelect.disabled = true;
+            }
+        })
+        .catch(() => {
+            setLoading(false);
+            showStatus('Network error. Enter details manually.', 'danger');
+        });
+    }
+
+    // Debounced input listener
+    pincodeInput.addEventListener('input', function() {
+        const val = this.value.replace(/\D/g, '').slice(0, 6);
+        this.value = val;
+
+        clearTimeout(debounceTimer);
+        if (val.length === 6) {
+            debounceTimer = setTimeout(() => lookupPincode(val), 300);
+        } else {
+            pincodeInput.classList.remove('is-valid', 'is-invalid');
+            clearStatus();
+            areaSelect.innerHTML = '<option value="">Enter pincode first</option>';
+            areaSelect.disabled = true;
+        }
+    });
+
+    // Auto-lookup on page load if pincode is pre-filled
+    if (pincodeInput.value && pincodeInput.value.length === 6) {
+        lookupPincode(pincodeInput.value);
+    }
+})();
+</script>
+{% endblock %}

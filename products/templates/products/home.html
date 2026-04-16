@@ -1,0 +1,754 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_tags %}
+
+{% block title %}Home{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
+    z-index: 1020;
+    display: flex;
+    padding: 6px 0 env(safe-area-inset-bottom, 4px);
+}
+.bottom-nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+    color: #999;
+    text-decoration: none;
+    font-size: 0.68rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+.bottom-nav a i { font-size: 1.25rem; margin-bottom: 2px; }
+.bottom-nav a.active,
+.bottom-nav a:hover { color: #E23744; }
+
+/* Budget/Premium Info Cards */
+.budget-cards { display: flex; gap: 12px; margin-bottom: 0; }
+.budget-card {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+.budget-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.budget-card.budget-type {
+    background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+    border: 1px solid #A5D6A7;
+}
+.budget-card.premium-type {
+    background: linear-gradient(135deg, #FFF8E1, #FFECB3);
+    border: 1px solid #FFD54F;
+}
+.budget-card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+}
+.budget-type .budget-card-icon { background: #43A047; color: white; }
+.premium-type .budget-card-icon { background: #F9A825; color: white; }
+.budget-card-text h6 { font-size: 0.85rem; font-weight: 700; margin: 0; color: #333; }
+.budget-card-text p { font-size: 0.7rem; margin: 0; color: #666; }
+
+/* Category Icons */
+.category-icons { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+.category-icons::-webkit-scrollbar { display: none; }
+.category-icon-item {
+    display: flex; flex-direction: column; align-items: center;
+    min-width: 64px; text-decoration: none; color: #333;
+}
+.category-icon-circle {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; margin-bottom: 6px; transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.category-icon-item:hover .category-icon-circle { transform: scale(1.08); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.category-icon-item span { font-size: 0.7rem; font-weight: 500; }
+.cat-men { background: #E3F2FD; color: #1565C0; }
+.cat-women { background: #FCE4EC; color: #C62828; }
+.cat-kids { background: #E8F5E9; color: #2E7D32; }
+.cat-footwear { background: #F3E5F5; color: #6A1B9A; }
+.cat-accessories { background: #FFF3E0; color: #E65100; }
+.cat-ethnic-wear { background: #FFEBEE; color: #B71C1C; }
+
+/* Section Header */
+.section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+}
+.section-header h6 { font-weight: 700; font-size: 0.95rem; margin: 0; }
+.section-header a { font-size: 0.8rem; color: #E23744; font-weight: 600; text-decoration: none; }
+
+/* Enhanced Shop Card */
+.shop-card { position: relative; }
+.shop-card .wishlist-btn {
+    position: absolute; top: 8px; right: 8px; z-index: 5;
+    width: 30px; height: 30px; border-radius: 50%; background: white;
+    border: none; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); cursor: pointer;
+    color: #ccc; font-size: 0.85rem; transition: all 0.2s;
+}
+.shop-card .wishlist-btn:hover { color: #E23744; }
+.shop-card-rating {
+    display: flex; align-items: center; gap: 3px; font-size: 0.75rem;
+    background: #1B5E20; color: white; padding: 2px 6px; border-radius: 4px;
+    font-weight: 600; display: inline-flex;
+}
+.shop-card-rating i { font-size: 0.65rem; }
+.open-badge {
+    display: inline-block; background: #E8F5E9; color: #2E7D32;
+    font-size: 0.68rem; font-weight: 600; padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Enhanced Product Card */
+.product-card { position: relative; }
+.product-card .wishlist-btn {
+    position: absolute; top: 8px; right: 8px; z-index: 5;
+    width: 28px; height: 28px; border-radius: 50%; background: white;
+    border: none; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15); cursor: pointer;
+    color: #ccc; font-size: 0.8rem; transition: all 0.2s;
+}
+.product-card .wishlist-btn:hover { color: #E23744; }
+.product-card-shop {
+    font-size: 0.7rem; color: #999; margin-bottom: 2px;
+    display: flex; align-items: center; gap: 4px;
+}
+.product-card-badge {
+    display: inline-block; font-size: 0.62rem; font-weight: 600;
+    padding: 2px 6px; border-radius: 3px; margin-top: 4px;
+}
+.badge-budget { background: #E3F2FD; color: #1565C0; }
+.badge-premium { background: #FFF3E0; color: #E65100; }
+
+/* Filter row for items mode */
+.filter-row {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    align-items: center;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 12px; border: 1.5px solid #ddd; border-radius: 20px;
+    font-size: 0.78rem; font-weight: 500; white-space: nowrap;
+    background: white; color: #333; text-decoration: none; transition: all 0.15s;
+    cursor: pointer;
+}
+.filter-chip:hover, .filter-chip.active { border-color: #E23744; color: #E23744; }
+.filter-chip.active { background: #FFF0F1; }
+.filter-chip i { font-size: 0.7rem; }
+
+/* Items found count */
+.items-count { font-size: 0.8rem; color: #999; font-weight: 400; }
+
+/* Body padding for bottom nav */
+body.has-bottom-nav { padding-bottom: 70px; }
+
+@media (min-width: 992px) {
+    .bottom-nav { display: none; }
+    body.has-bottom-nav { padding-bottom: 0; }
+}
+/* Location Modal */
+.loc-modal-search { position: relative; }
+.loc-modal-search input {
+    border-radius: 10px; padding: 10px 14px 10px 38px;
+    border: 1.5px solid #eee; font-size: 0.9rem; width: 100%;
+}
+.loc-modal-search input:focus { border-color: #E23744; outline: none; box-shadow: 0 0 0 3px rgba(226,55,68,0.1); }
+.loc-modal-search .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: #999; font-size: 1rem;
+}
+.loc-gps-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border: 1.5px solid #eee; border-radius: 10px;
+    background: white; cursor: pointer; width: 100%; transition: all 0.15s;
+    font-size: 0.88rem;
+}
+.loc-gps-btn:hover { border-color: #E23744; background: #FFF5F6; }
+.loc-gps-btn i { color: #E23744; font-size: 1.2rem; }
+.loc-gps-btn .gps-text strong { display: block; font-size: 0.85rem; color: #333; }
+.loc-gps-btn .gps-text span { font-size: 0.72rem; color: #999; }
+.loc-suggestion {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid #f5f5f5;
+    cursor: pointer; transition: background 0.1s;
+}
+.loc-suggestion:hover { background: #fafafa; }
+.loc-suggestion i { color: #999; font-size: 1rem; margin-top: 2px; }
+.loc-suggestion .loc-name { font-size: 0.85rem; font-weight: 500; color: #333; }
+.loc-suggestion .loc-addr { font-size: 0.72rem; color: #999; }
+.loc-recent-title { font-size: 0.78rem; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.loc-searching { text-align: center; padding: 20px; color: #999; font-size: 0.85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Location Bar -->
+<div class="location-bar" id="locationBar" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#locationModal">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-center py-2">
+            <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+            <span class="text-muted small">Deliver to: </span>
+            <strong class="ms-1 small" id="locationText">Detecting location...</strong>
+            <i class="bi bi-chevron-down ms-1 small text-muted"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Location Picker Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius:16px; border:none;">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-geo-alt text-danger me-2"></i>Choose Location</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <!-- GPS Button -->
+                <button class="loc-gps-btn mb-3" id="gpsBtn" onclick="detectGPS()">
+                    <i class="bi bi-crosshair"></i>
+                    <div class="gps-text">
+                        <strong>Use Current Location</strong>
+                        <span>Using GPS</span>
+                    </div>
+                </button>
+
+                <!-- Search Input -->
+                <div class="loc-modal-search mb-3">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="locSearchInput" placeholder="Search area, city or pincode..." autocomplete="off">
+                </div>
+
+                <!-- Search Results -->
+                <div id="locResults" style="max-height:240px; overflow-y:auto;"></div>
+
+                <!-- Recent Locations -->
+                <div id="locRecent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="container mt-3">
+    <form action="{% url 'products:search' %}" method="GET" class="search-form">
+        <div class="input-group search-input-group">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" name="q" class="form-control border-start-0 search-input"
+                   placeholder="Search for shops or items..." value="{{ search_query }}"
+                   id="searchInput" autocomplete="off">
+        </div>
+        <div class="search-suggestions" id="searchSuggestions"></div>
+    </form>
+</div>
+
+<!-- Toggle: Shop by Shops / Shop by Items -->
+<div class="container mt-3">
+    <div class="toggle-container">
+        <a href="{% url 'products:home' %}?mode=shops"
+           class="toggle-btn {% if mode == 'shops' %}active{% endif %}">
+            <i class="bi bi-shop me-1"></i>Shop by Shops
+        </a>
+        <a href="{% url 'products:home' %}?mode=items"
+           class="toggle-btn {% if mode == 'items' %}active{% endif %}">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Shop by Items
+        </a>
+    </div>
+</div>
+
+{% if mode == 'shops' %}
+<!-- ==================== SHOP BY SHOPS MODE ==================== -->
+
+<!-- Shop by Budget Cards -->
+<div class="container mt-3">
+    <div class="section-header">
+        <h6>Shop by Budget</h6>
+    </div>
+    <div class="budget-cards">
+        <a href="{% url 'products:home' %}?mode=shops&shop_type=budget" class="budget-card budget-type">
+            <div class="budget-card-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="budget-card-text">
+                <h6>Budget Friendly</h6>
+                <p>Great Quality, Best Prices</p>
+            </div>
+        </a>
+        <a href="{% url 'products:home' %}?mode=shops&shop_type=premium" class="budget-card premium-type">
+            <div class="budget-card-icon"><i class="bi bi-gem"></i></div>
+            <div class="budget-card-text">
+                <h6>Premium</h6>
+                <p>Top Brands, Premium Experience</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+{% if budget_shops %}
+<!-- Popular Shops (Budget) -->
+<div class="container mt-4">
+    <div class="section-header">
+        <h6>Popular Shops Near You</h6>
+        <a href="{% url 'products:shop_list' %}?type=budget">View All</a>
+    </div>
+    <div class="row g-3">
+        {% for shop in budget_shops|slice:":4" %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'products:shop_detail' shop.pk %}" class="text-decoration-none">
+                <div class="shop-card">
+                    <button class="wishlist-btn" onclick="event.preventDefault();"><i class="bi bi-heart"></i></button>
+                    <div class="shop-card-images">
+                        {% with products=shop.products.all|slice:":3" %}
+                        {% for product in products %}
+                        <div class="shop-card-img">
+                            {% if product.primary_image %}
+                            <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+                            {% else %}
+                            <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="shop-card-img">
+                            <div class="placeholder-img"><i class="bi bi-shop"></i></div>
+                        </div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="shop-card-info">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="shop-card-name">{{ shop.name }}</h6>
+                            <span class="shop-card-rating"><i class="bi bi-star-fill"></i> {{ shop.rating }}</span>
+                        </div>
+                        <div class="shop-card-meta">
+                            <span class="shop-distance"><i class="bi bi-geo-alt-fill"></i> {% if shop.distance_km is not None %}{{ shop.distance_km }} km{% else %}--{% endif %}</span>
+                            <span class="text-muted">•</span>
+                            <span class="text-muted small">{{ shop.get_shop_type_display }}</span>
+                        </div>
+                        <span class="open-badge mt-1">Open</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if premium_shops %}
+<!-- Premium Shops -->
+<div class="container mt-4">
+    <div class="section-header">
+        <h6>Premium Shops</h6>
+        <a href="{% url 'products:shop_list' %}?type=premium">View All</a>
+    </div>
+    <div class="row g-3">
+        {% for shop in premium_shops|slice:":4" %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'products:shop_detail' shop.pk %}" class="text-decoration-none">
+                <div class="shop-card">
+                    <button class="wishlist-btn" onclick="event.preventDefault();"><i class="bi bi-heart"></i></button>
+                    <div class="shop-card-images">
+                        {% with products=shop.products.all|slice:":3" %}
+                        {% for product in products %}
+                        <div class="shop-card-img">
+                            {% if product.primary_image %}
+                            <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+                            {% else %}
+                            <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="shop-card-img">
+                            <div class="placeholder-img"><i class="bi bi-shop"></i></div>
+                        </div>
+                        {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="shop-card-info">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="shop-card-name">{{ shop.name }}</h6>
+                            <span class="shop-card-rating"><i class="bi bi-star-fill"></i> {{ shop.rating }}</span>
+                        </div>
+                        <div class="shop-card-meta">
+                            <span class="shop-distance"><i class="bi bi-geo-alt-fill"></i> {% if shop.distance_km is not None %}{{ shop.distance_km }} km{% else %}--{% endif %}</span>
+                            <span class="text-muted">•</span>
+                            <span class="text-muted small">{{ shop.get_shop_type_display }}</span>
+                        </div>
+                        <span class="open-badge mt-1">Open</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if not budget_shops and not premium_shops %}
+<div class="container mt-5 text-center">
+    <i class="bi bi-shop fs-1 text-muted"></i>
+    <p class="text-muted mt-2">No shops available yet. Check back soon!</p>
+</div>
+{% endif %}
+
+{% else %}
+<!-- ==================== SHOP BY ITEMS MODE ==================== -->
+
+<!-- Category Icons -->
+<div class="container mt-3">
+    <div class="section-header">
+        <h6>Categories</h6>
+        <a href="{% url 'products:product_list' %}">View All</a>
+    </div>
+    <div class="category-icons">
+        {% for cat in categories %}
+        <a href="{% url 'products:home' %}?mode=items&category={{ cat.slug }}" class="category-icon-item">
+            <div class="category-icon-circle cat-{{ cat.slug }}">
+                {% if cat.slug == 'men' %}<i class="bi bi-person"></i>
+                {% elif cat.slug == 'women' %}<i class="bi bi-person-standing-dress"></i>
+                {% elif cat.slug == 'kids' %}<i class="bi bi-emoji-smile"></i>
+                {% elif cat.slug == 'footwear' %}<i class="bi bi-handbag"></i>
+                {% elif cat.slug == 'accessories' %}<i class="bi bi-watch"></i>
+                {% elif cat.slug == 'ethnic-wear' %}<i class="bi bi-flower1"></i>
+                {% else %}<i class="bi bi-tag"></i>{% endif %}
+            </div>
+            <span>{{ cat.name }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Filters Row -->
+<div class="container mt-3">
+    <div class="filter-row">
+        <div class="dropdown">
+            <button class="filter-chip dropdown-toggle" data-bs-toggle="dropdown">Category <i class="bi bi-chevron-down"></i></button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items">All</a></li>
+                {% for cat in categories %}
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&category={{ cat.slug }}">{{ cat.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="dropdown">
+            <button class="filter-chip dropdown-toggle" data-bs-toggle="dropdown">Price <i class="bi bi-chevron-down"></i></button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&price_max=500">Under ₹500</a></li>
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&price_min=500&price_max=1000">₹500 - ₹1,000</a></li>
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&price_min=1000&price_max=2000">₹1,000 - ₹2,000</a></li>
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&price_min=2000">₹2,000+</a></li>
+            </ul>
+        </div>
+        <div class="dropdown">
+            <button class="filter-chip dropdown-toggle" data-bs-toggle="dropdown">Sort By <i class="bi bi-chevron-down"></i></button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&sort=-created_at">Newest</a></li>
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&sort=base_price">Price: Low → High</a></li>
+                <li><a class="dropdown-item" href="{% url 'products:home' %}?mode=items&sort=-base_price">Price: High → Low</a></li>
+            </ul>
+        </div>
+        <a href="{% url 'products:home' %}?mode=items&shop_type_filter=budget" class="filter-chip {% if request.GET.shop_type_filter == 'budget' %}active{% endif %}"><i class="bi bi-check-circle"></i> Budget Friendly</a>
+        <a href="{% url 'products:home' %}?mode=items&shop_type_filter=premium" class="filter-chip {% if request.GET.shop_type_filter == 'premium' %}active{% endif %}"><i class="bi bi-gem"></i> Premium</a>
+        <span class="filter-chip"><i class="bi bi-geo-alt"></i> Within 10 km</span>
+    </div>
+</div>
+
+<!-- Items Found + Clear -->
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">All Items <span class="items-count">{{ products.paginator.count }} Items Found</span></h6>
+        {% if category_slug %}
+        <a href="{% url 'products:home' %}?mode=items" class="text-danger small fw-semibold">Clear All</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Products Grid -->
+<div class="container mt-2 mb-4">
+    <div class="row g-3">
+        {% for product in products %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="product-card">
+                <button class="wishlist-btn" onclick="event.stopPropagation();"><i class="bi bi-heart"></i></button>
+                <a href="{% url 'products:product_detail' product.slug %}" class="text-decoration-none">
+                    <div class="product-card-img">
+                        {% if product.primary_image %}
+                        <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+                        {% else %}
+                        <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="product-card-info">
+                        <h6 class="product-card-name">{{ product.name }}</h6>
+                        <p class="product-card-price">₹{{ product.base_price|floatformat:0 }}</p>
+                        <div class="product-card-shop">
+                            <span>{{ product.shop.name }}</span>
+                            <span>•</span>
+                            <span>{% if product.shop.distance_km is not None %}{{ product.shop.distance_km }} km{% else %}{{ product.shop.city }}{% endif %}</span>
+                        </div>
+                        <span class="product-card-badge {% if product.shop.shop_type == 'budget' %}badge-budget{% else %}badge-premium{% endif %}">{{ product.shop.get_shop_type_display }}</span>
+                    </div>
+                </a>
+                <form class="quick-add-form" data-url="{% url 'orders:quick_add_to_cart' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.pk }}">
+                    <button type="submit" class="btn-add-to-cart">Add to Cart</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-bag-x fs-1 text-muted"></i>
+            <p class="text-muted mt-2">No products found. Try different filters!</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if products.has_previous %}
+            <li class="page-item"><a class="page-link" href="?mode=items&page={{ products.previous_page_number }}{% if category_slug %}&category={{ category_slug }}{% endif %}">&laquo;</a></li>
+            {% endif %}
+            {% for num in products.paginator.page_range %}
+            <li class="page-item {% if products.number == num %}active{% endif %}">
+                <a class="page-link" href="?mode=items&page={{ num }}{% if category_slug %}&category={{ category_slug }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if products.has_next %}
+            <li class="page-item"><a class="page-link" href="?mode=items&page={{ products.next_page_number }}{% if category_slug %}&category={{ category_slug }}{% endif %}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Bottom Navigation Bar (mobile) -->
+<div class="bottom-nav d-lg-none">
+    <a href="{% url 'products:home' %}" class="active">
+        <i class="bi bi-house-fill"></i>Home
+    </a>
+    <a href="{% url 'products:product_list' %}">
+        <i class="bi bi-grid-3x3-gap-fill"></i>Categories
+    </a>
+    <a href="{% url 'orders:order_list' %}">
+        <i class="bi bi-receipt"></i>Orders
+    </a>
+    <a href="{% if user.is_authenticated %}{% url 'users:profile' %}{% else %}{% url 'users:login' %}{% endif %}">
+        <i class="bi bi-person"></i>Profile
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.body.classList.add('has-bottom-nav');
+
+(function() {
+    var STORAGE_KEY = 'shopnow_loc';
+    var RECENT_KEY  = 'shopnow_recent';
+    var locationText = document.getElementById('locationText');
+    var locSearchInput = document.getElementById('locSearchInput');
+    var locResults = document.getElementById('locResults');
+    var locRecent = document.getElementById('locRecent');
+    var gpsBtn = document.getElementById('gpsBtn');
+    var timer = null;
+
+    // --- Init: check URL for coords, else load cache ---
+    var params = new URLSearchParams(window.location.search);
+    var hasCoords = params.has('lat') && params.has('lng');
+
+    var cached = null;
+    try { cached = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) {}
+
+    if (cached && cached.name) {
+        locationText.textContent = cached.name;
+        if (!hasCoords && cached.lat && cached.lng) {
+            reloadWithCoords(cached.lat, cached.lng);
+            return;
+        }
+    } else {
+        locationText.textContent = hasCoords ? 'Your Location' : 'Select Location';
+    }
+
+    // --- Modal open: focus search, show recent ---
+    var modal = document.getElementById('locationModal');
+    if (modal) {
+        modal.addEventListener('shown.bs.modal', function() {
+            locSearchInput.value = '';
+            locResults.innerHTML = '';
+            renderRecent();
+            locSearchInput.focus();
+        });
+    }
+
+    // --- Search input with debounce ---
+    locSearchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        var q = this.value.trim();
+        if (q.length < 3) {
+            locResults.innerHTML = '';
+            renderRecent();
+            return;
+        }
+        locResults.innerHTML = '<div class="loc-searching"><div class="spinner-border spinner-border-sm text-danger me-2"></div> Searching...</div>';
+        locRecent.innerHTML = '';
+        timer = setTimeout(function() { doSearch(q); }, 500);
+    });
+
+    // --- Search via backend proxy ---
+    function doSearch(q) {
+        fetch('/home/api/geo-search/?q=' + encodeURIComponent(q))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var results = data.results || [];
+                if (!results.length) {
+                    locResults.innerHTML = '<div class="loc-searching">No locations found. Try a different search.</div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < results.length; i++) {
+                    var r = results[i];
+                    html += '<div class="loc-suggestion" data-lat="' + r.lat + '" data-lng="' + r.lng + '" data-name="' + escapeAttr(r.display) + '">'
+                        + '<i class="bi bi-geo-alt"></i>'
+                        + '<div>'
+                        + '<div class="loc-name">' + escapeHTML(r.display) + '</div>'
+                        + '<div class="loc-addr">' + escapeHTML(r.address) + '</div>'
+                        + '</div></div>';
+                }
+                locResults.innerHTML = html;
+            })
+            .catch(function() {
+                locResults.innerHTML = '<div class="loc-searching">Search failed. Please try again.</div>';
+            });
+    }
+
+    // --- Click on search result (event delegation) ---
+    locResults.addEventListener('click', function(e) {
+        var el = e.target.closest('.loc-suggestion');
+        if (!el) return;
+        chooseLocation(el.dataset.lat, el.dataset.lng, el.dataset.name);
+    });
+
+    // --- Click on recent location (event delegation) ---
+    locRecent.addEventListener('click', function(e) {
+        var el = e.target.closest('.loc-suggestion');
+        if (!el) return;
+        chooseLocation(el.dataset.lat, el.dataset.lng, el.dataset.name);
+    });
+
+    // --- GPS Button ---
+    gpsBtn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser.');
+            return;
+        }
+        gpsBtn.disabled = true;
+        gpsBtn.querySelector('.gps-text strong').textContent = 'Detecting...';
+        gpsBtn.querySelector('.gps-text span').textContent = 'Please wait';
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                var lat = pos.coords.latitude.toFixed(6);
+                var lng = pos.coords.longitude.toFixed(6);
+                fetch('/home/api/reverse-geocode/?lat=' + lat + '&lng=' + lng)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        chooseLocation(lat, lng, data.location || 'Current Location');
+                    })
+                    .catch(function() {
+                        chooseLocation(lat, lng, 'Current Location');
+                    });
+            },
+            function(err) {
+                gpsBtn.disabled = false;
+                gpsBtn.querySelector('.gps-text strong').textContent = 'Use Current Location';
+                gpsBtn.querySelector('.gps-text span').textContent = 'Using GPS';
+                if (err.code === 1) {
+                    alert('Location access denied. Please allow location in browser settings.');
+                } else {
+                    alert('Could not detect location. Please try again or search manually.');
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    });
+
+    // --- Core: Choose a location ---
+    function chooseLocation(lat, lng, name) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({lat: lat, lng: lng, name: name}));
+        saveRecent(lat, lng, name);
+        locationText.textContent = name;
+        var modalEl = document.getElementById('locationModal');
+        var bsModal = bootstrap.Modal.getInstance(modalEl);
+        if (bsModal) bsModal.hide();
+        reloadWithCoords(lat, lng);
+    }
+
+    // --- Recent locations ---
+    function saveRecent(lat, lng, name) {
+        var recent = [];
+        try { recent = JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch(e) {}
+        recent = recent.filter(function(r) { return r.name !== name; });
+        recent.unshift({lat: lat, lng: lng, name: name});
+        if (recent.length > 5) recent = recent.slice(0, 5);
+        localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+    }
+
+    function renderRecent() {
+        var recent = [];
+        try { recent = JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch(e) {}
+        if (!recent.length) { locRecent.innerHTML = ''; return; }
+        var html = '<div class="loc-recent-title mt-2">Recent Locations</div>';
+        for (var i = 0; i < recent.length; i++) {
+            var r = recent[i];
+            html += '<div class="loc-suggestion" data-lat="' + r.lat + '" data-lng="' + r.lng + '" data-name="' + escapeAttr(r.name) + '">'
+                + '<i class="bi bi-clock-history"></i>'
+                + '<div><div class="loc-name">' + escapeHTML(r.name) + '</div></div>'
+                + '</div>';
+        }
+        locRecent.innerHTML = html;
+    }
+
+    // --- Reload page with coords ---
+    function reloadWithCoords(lat, lng) {
+        var url = new URL(window.location.href);
+        if (url.searchParams.get('lat') === String(lat) && url.searchParams.get('lng') === String(lng)) return;
+        url.searchParams.set('lat', lat);
+        url.searchParams.set('lng', lng);
+        window.location.replace(url.toString());
+    }
+
+    // --- Helpers ---
+    function escapeHTML(s) {
+        var d = document.createElement('div');
+        d.textContent = s || '';
+        return d.innerHTML;
+    }
+    function escapeAttr(s) {
+        return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+})();
+</script>
+<style>.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }</style>
+{% endblock %}

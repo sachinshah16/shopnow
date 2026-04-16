@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Search Form -->
+    <form method="GET" class="mb-4">
+        <div class="input-group search-input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" name="q" class="form-control search-input" placeholder="Search shops or products..." value="{{ query }}" autofocus>
+            <button type="submit" class="btn btn-shopnow">Search</button>
+        </div>
+    </form>
+
+    {% if query %}
+    <!-- Shop results -->
+    {% if shops %}
+    <h6 class="section-title">Shops matching "{{ query }}"</h6>
+    <div class="row g-3 mb-4">
+        {% for shop in shops %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'products:shop_detail' shop.pk %}" class="text-decoration-none">
+                <div class="shop-card">
+                    <div class="shop-card-images">
+                        <div class="shop-card-img">
+                            {% if shop.banner %}
+                            <img src="{{ shop.banner.url }}" alt="{{ shop.name }}">
+                            {% else %}
+                            <div class="placeholder-img"><i class="bi bi-shop"></i></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="shop-card-info">
+                        <h6 class="shop-card-name">{{ shop.name }}</h6>
+                        <span class="text-muted small">{{ shop.city }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Product results -->
+    <h6 class="section-title">Products matching "{{ query }}" ({{ products.paginator.count }})</h6>
+    <div class="row g-3">
+        {% for product in products %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="product-card">
+                <a href="{% url 'products:product_detail' product.slug %}" class="text-decoration-none">
+                    <div class="product-card-img">
+                        {% if product.primary_image %}
+                        <img src="{{ product.primary_image.image.url }}" alt="{{ product.name }}">
+                        {% else %}
+                        <div class="placeholder-img"><i class="bi bi-image"></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="product-card-info">
+                        <h6 class="product-card-name">{{ product.name }}</h6>
+                        <p class="product-card-price">₹ {{ product.base_price|floatformat:0 }}</p>
+                    </div>
+                </a>
+                <form class="quick-add-form" data-url="{% url 'orders:quick_add_to_cart' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.pk }}">
+                    <button type="submit" class="btn-add-to-cart">Add to Cart</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-search fs-1 text-muted"></i>
+            <p class="text-muted mt-2">No products found for "{{ query }}"</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if products.has_other_pages %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if products.has_previous %}
+            <li class="page-item"><a class="page-link" href="?q={{ query }}&page={{ products.previous_page_number }}">&laquo;</a></li>
+            {% endif %}
+            {% for num in products.paginator.page_range %}
+            <li class="page-item {% if products.number == num %}active{% endif %}">
+                <a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if products.has_next %}
+            <li class="page-item"><a class="page-link" href="?q={{ query }}&page={{ products.next_page_number }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-search fs-1 text-muted"></i>
+        <p class="text-muted mt-2">Search for shops, products, or categories</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

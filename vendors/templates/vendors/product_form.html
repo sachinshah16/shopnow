@@ -1,0 +1,147 @@
+{% extends 'vendors/vendor_base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }} Product{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{% url 'vendors:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'vendors:products' %}">Products</a></li>
+            <li class="breadcrumb-item active">{{ action }} Product</li>
+        </ol>
+    </nav>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-4">
+            <!-- Product Info -->
+            <div class="col-lg-8">
+                <div class="checkout-card">
+                    <h5 class="fw-bold mb-4">Product Information</h5>
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">{{ field.label }}</label>
+                        {% if field.field.widget.input_type == 'checkbox' %}
+                        <div class="form-check">
+                            {% render_field field class="form-check-input" %}
+                        </div>
+                        {% else %}
+                        {% render_field field class="form-control" %}
+                        {% endif %}
+                        {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Images -->
+                <div class="checkout-card mt-4">
+                    <h5 class="fw-bold mb-3">Product Images</h5>
+
+                    {% if existing_images %}
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for img in existing_images %}
+                        <div class="position-relative" id="imgWrap{{ img.pk }}">
+                            <img src="{{ img.image.url }}" class="rounded" style="width:80px;height:80px;object-fit:cover;">
+                            <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0"
+                                    style="padding:2px 6px;font-size:0.7rem;"
+                                    onclick="deleteImage({{ img.pk }})">×</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Upload Images</label>
+                        <input type="file" name="images" class="form-control" multiple accept="image/*">
+                        <div class="text-muted small mt-1">First image will be set as primary</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Variants -->
+            <div class="col-lg-4">
+                <div class="checkout-card">
+                    <h5 class="fw-bold mb-3">Variants</h5>
+
+                    {% if existing_variants %}
+                    <div class="mb-3">
+                        <h6 class="small fw-semibold mb-2">Existing Variants</h6>
+                        {% for v in existing_variants %}
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2 small" id="varWrap{{ v.pk }}">
+                            <div>
+                                <span class="fw-semibold">{{ v.size }}</span> / {{ v.color }}
+                                <br><span class="text-muted">Stock: {{ v.stock_quantity }}</span>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteVariant({{ v.pk }})" style="padding:2px 8px;font-size:0.7rem;">×</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <h6 class="small fw-semibold mb-2">Add New Variants</h6>
+                    <div id="variantContainer">
+                        <div class="variant-row border rounded p-2 mb-2">
+                            <select name="variant_size" class="form-select form-select-sm mb-1">
+                                <option value="">Size</option>
+                                <option value="XS">XS</option>
+                                <option value="S">S</option>
+                                <option value="M">M</option>
+                                <option value="L">L</option>
+                                <option value="XL">XL</option>
+                                <option value="XXL">XXL</option>
+                                <option value="FREE">Free Size</option>
+                            </select>
+                            <input type="text" name="variant_color" class="form-control form-control-sm mb-1" placeholder="Color">
+                            <input type="color" name="variant_color_code" class="form-control form-control-sm form-control-color mb-1" value="#000000">
+                            <input type="number" name="variant_stock" class="form-control form-control-sm mb-1" placeholder="Stock" min="0">
+                            <input type="number" name="variant_price" class="form-control form-control-sm" placeholder="Price override (optional)" step="0.01">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="addVariantRow()">
+                        <i class="bi bi-plus me-1"></i>Add Another Variant
+                    </button>
+                </div>
+
+                <button type="submit" class="btn btn-shopnow w-100 mt-3 btn-lg">
+                    <i class="bi bi-check-circle me-2"></i>{{ action }} Product
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addVariantRow() {
+    const container = document.getElementById('variantContainer');
+    const row = container.querySelector('.variant-row').cloneNode(true);
+    row.querySelectorAll('input, select').forEach(el => el.value = '');
+    container.appendChild(row);
+}
+
+function deleteVariant(id) {
+    if (!confirm('Delete this variant?')) return;
+    fetch(`/vendor/variants/${id}/delete/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+    }).then(r => r.json()).then(d => {
+        if (d.status === 'ok') document.getElementById('varWrap' + id).remove();
+    });
+}
+
+function deleteImage(id) {
+    if (!confirm('Delete this image?')) return;
+    fetch(`/vendor/images/${id}/delete/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+    }).then(r => r.json()).then(d => {
+        if (d.status === 'ok') document.getElementById('imgWrap' + id).remove();
+    });
+}
+</script>
+{% endblock %}

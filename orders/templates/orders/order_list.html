@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <h5 class="fw-bold mb-4"><i class="bi bi-receipt me-2"></i>My Orders</h5>
+
+    {% for order in orders %}
+    <div class="order-card mb-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h6 class="fw-bold mb-1">{{ order.order_number }}</h6>
+                <p class="text-muted small mb-1">Placed on {{ order.created_at|date:"d M Y, h:i A" }}</p>
+                <p class="text-muted small mb-0">{{ order.items.count }} item{{ order.items.count|pluralize }}</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-{{ order.status_display_class }} mb-1">{{ order.get_status_display }}</span>
+                <p class="fw-bold mb-0">₹ {{ order.total_amount|floatformat:0 }}</p>
+            </div>
+        </div>
+        <div class="mt-2">
+            <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-outline-shopnow btn-sm">View Details</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5">
+        <i class="bi bi-receipt fs-1 text-muted"></i>
+        <p class="text-muted mt-3">No orders yet</p>
+        <a href="{% url 'products:home' %}" class="btn btn-shopnow">Start Shopping</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
