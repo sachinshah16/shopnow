@@ -16,8 +16,8 @@ venv.bak/
 local_settings.py
 
 # Media / Uploaded files
-media/
-media-serve/
+# media/
+# media-serve/
 
 # Static files (collected during production build)
 staticfiles/
