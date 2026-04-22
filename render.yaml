@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: shopnow
+    env: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn shopnow.wsgi:application
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.render.com"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
